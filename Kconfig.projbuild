@@ -1,0 +1,47 @@
+menu "Component drv_hr202l Configuration"
+
+    config DRV_HR202L_USE
+        bool "Use drv_hr202l component"
+        default y
+
+    config DRV_HR202L_GPIO_RANGE_MIN
+        int "GPIO Minimum"
+        default 0
+
+    config DRV_HR202L_GPIO_RANGE_NONE
+        int "GPIO Not Used"
+        default -1
+
+    config DRV_HR202L_GPIO_OUT_RANGE_MAX
+        int "Output GPIO Maximum"
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
+    config DRV_HR202L_GPIO_IN_RANGE_MAX
+        int "Input GPIO Maximum"
+        default 39 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+    
+    
+
+    config DRV_HR202L_PIN_A1
+        int "GPIO pin number HR202L A1"
+        range DRV_HR202L_GPIO_RANGE_NONE DRV_HR202L_GPIO_OUT_RANGE_MAX
+        default DRV_HR202L_GPIO_RANGE_NONE
+    
+    config DRV_HR202L_PIN_A2
+        int "GPIO pin number HR202L A2"
+        range DRV_HR202L_GPIO_RANGE_NONE DRV_HR202L_GPIO_OUT_RANGE_MAX
+        default DRV_HR202L_GPIO_RANGE_NONE
+        
+    config DRV_HR202L_PIN_DBG
+        int "GPIO pin number HR202L DBG"
+        range DRV_HR202L_GPIO_RANGE_NONE DRV_HR202L_GPIO_OUT_RANGE_MAX
+        default DRV_HR202L_GPIO_RANGE_NONE
+    
+            
+endmenu

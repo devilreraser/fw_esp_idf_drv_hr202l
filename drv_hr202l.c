@@ -77,25 +77,39 @@ static bool IRAM_ATTR timer_group_isr_callback(void *args)
     switch(timer_frame_index)
     {
         case 0:
+            gpio_set_level(pin_DBG, 1);
+            drv_adc_sample_channel(DRV_ADC_AIN_0);
+            gpio_set_level(pin_DBG, 0);
+            break;
+        case 1:
+            gpio_set_level(pin_DBG, 1);
             drv_adc_sample_channel(DRV_ADC_AIN_1);
+            gpio_set_level(pin_DBG, 0);
             gpio_set_level(pin_A1, 0);
             gpio_set_level(pin_A2, 1);
             break;
-        case 1:
-            drv_adc_sample_channel(DRV_ADC_AIN_2);
-            break;
         case 2:
+            gpio_set_level(pin_DBG, 1);
+            drv_adc_sample_channel(DRV_ADC_AIN_2);
+            gpio_set_level(pin_DBG, 0);
+            break;
+        case 3:
             gpio_set_level(pin_DBG, 1);
             drv_adc_sample_channel(DRV_ADC_AIN_3);
             gpio_set_level(pin_DBG, 0);
             gpio_set_level(pin_A1, 1);
             gpio_set_level(pin_A2, 0);
             break;
-        case 3:
-            //ESP_ERROR_CHECK(timer_set_auto_reload(group, timer, TIMER_AUTORELOAD_DIS));
-            break;
         case 4:
+            //ESP_ERROR_CHECK(timer_set_auto_reload(group, timer, TIMER_AUTORELOAD_DIS));
+            gpio_set_level(pin_DBG, 1);
             drv_adc_sample_channel(DRV_ADC_AIN_0);
+            gpio_set_level(pin_DBG, 0);
+            break;
+        case 5:
+            gpio_set_level(pin_DBG, 1);
+            drv_adc_sample_channel(DRV_ADC_AIN_1);
+            gpio_set_level(pin_DBG, 0);
             gpio_set_level(pin_A1, 0);
             gpio_set_level(pin_A2, 0);
             ESP_ERROR_CHECK(timer_pause(group, timer));
@@ -222,6 +236,7 @@ void drv_hr202l_trigger_measurement(void)
     ESP_ERROR_CHECK(timer_set_counter_value(group, timer, 0));
     //ESP_ERROR_CHECK(timer_set_auto_reload(group, timer, TIMER_AUTORELOAD_EN));
     timer_frame_index = 0;
+    timer_group_clr_intr_status_in_isr(group, timer);
     ESP_ERROR_CHECK(timer_start(group, timer));
     #endif
 }

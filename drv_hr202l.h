@@ -51,6 +51,7 @@ void drv_hr202l_dbg_pin_setup(gpio_num_t pin);
 void drv_hr202l_a1_pin_setup(gpio_num_t pin);
 void drv_hr202l_a2_pin_setup(gpio_num_t pin);
 void drv_hr202l_init(gpio_num_t pin_A1, gpio_num_t pin_A2, gpio_num_t pin_DBG);
+void drv_hr202l_trigger_measurement(void);
 
 #ifdef __cplusplus
 }

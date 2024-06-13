@@ -27,7 +27,7 @@
 #define TIMER_RESOLUTION_HZ   1000000 // 1MHz resolution
 #define TIMER_ALARM_PERIOD_S  0.00025     // Alarm period resolution 1 second
 
-
+#define TIMER_MODE_ONE_SHOT         1
 
 /* *****************************************************************************
  * Constants and Macros Definitions
@@ -54,11 +54,16 @@
 /* *****************************************************************************
  * Prototype of functions definitions
  **************************************************************************** */
-gpio_num_t pin_A1 = GPIO_NUM_NC;
-gpio_num_t pin_A2 = GPIO_NUM_NC;
-gpio_num_t pin_DBG = GPIO_NUM_NC;
+static gpio_num_t pin_A1 = GPIO_NUM_NC;
+static gpio_num_t pin_A2 = GPIO_NUM_NC;
+static gpio_num_t pin_DBG = GPIO_NUM_NC;
 
-bool b_init_passes = false;
+static bool b_init_passes = false;
+static int group = TIMER_GROUP_0;
+static int timer = TIMER_0;
+#if TIMER_MODE_ONE_SHOT
+static int timer_frame_index = 0;
+#endif
 
 /* *****************************************************************************
  * Functions
@@ -67,10 +72,39 @@ bool b_init_passes = false;
 static bool IRAM_ATTR timer_group_isr_callback(void *args)
 {
     BaseType_t high_task_awoken = pdFALSE;
+    
+    #if TIMER_MODE_ONE_SHOT
+    switch(timer_frame_index)
+    {
+        case 0:
+            drv_adc_sample_channel(DRV_ADC_AIN_1);
+            gpio_set_level(pin_A1, 0);
+            gpio_set_level(pin_A2, 1);
+            break;
+        case 1:
+            drv_adc_sample_channel(DRV_ADC_AIN_2);
+            break;
+        case 2:
+            gpio_set_level(pin_DBG, 1);
+            drv_adc_sample_channel(DRV_ADC_AIN_3);
+            gpio_set_level(pin_DBG, 0);
+            gpio_set_level(pin_A1, 1);
+            gpio_set_level(pin_A2, 0);
+            break;
+        case 3:
+            //ESP_ERROR_CHECK(timer_set_auto_reload(group, timer, TIMER_AUTORELOAD_DIS));
+            break;
+        case 4:
+            drv_adc_sample_channel(DRV_ADC_AIN_0);
+            gpio_set_level(pin_A1, 0);
+            gpio_set_level(pin_A2, 0);
+            ESP_ERROR_CHECK(timer_pause(group, timer));
+            break;
+    }
+    timer_frame_index++;
+    #else
     static uint32_t loop_counter = 0;
-
     int time_chunk = loop_counter & 0x03;
-
     switch(time_chunk)
     {
         case 0:
@@ -93,6 +127,8 @@ static bool IRAM_ATTR timer_group_isr_callback(void *args)
             break;
     }
     loop_counter++;
+    #endif
+    
 
     // Send the event data back to the main program task
     //xQueueSendFromISR(user_data->user_queue, &evt, &high_task_awoken);
@@ -108,10 +144,10 @@ void setup_timer(void)
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
         .alarm_en = TIMER_ALARM_EN,
+        //#if TIMER_MODE_ONE_SHOT == 0
         .auto_reload = TIMER_AUTORELOAD_EN,
+        //#endif
     };
-    int group = TIMER_GROUP_0;
-    int timer = TIMER_0;
     uint64_t alarm_value = TIMER_ALARM_PERIOD_S * TIMER_RESOLUTION_HZ;
     ESP_ERROR_CHECK(timer_init(group, timer, &config));
     // For the timer counter to a initial value
@@ -121,8 +157,13 @@ void setup_timer(void)
     ESP_ERROR_CHECK(timer_enable_intr(group, timer));
     // Hook interrupt callback
     ESP_ERROR_CHECK(timer_isr_callback_add(group, timer, timer_group_isr_callback, NULL, 0));
+    #if TIMER_MODE_ONE_SHOT == 0
     // Start timer
     ESP_ERROR_CHECK(timer_start(group, timer));
+    #else
+    timer_frame_index = 0;
+    //ESP_ERROR_CHECK(timer_start(group, timer));
+    #endif
 }
 
 
@@ -173,3 +214,14 @@ void drv_hr202l_init(gpio_num_t pin_A1, gpio_num_t pin_A2, gpio_num_t pin_DBG)
     }
 }
 
+void drv_hr202l_trigger_measurement(void)
+{
+    #if TIMER_MODE_ONE_SHOT
+    ESP_ERROR_CHECK(timer_pause(group, timer));
+    // For the timer counter to a initial value
+    ESP_ERROR_CHECK(timer_set_counter_value(group, timer, 0));
+    //ESP_ERROR_CHECK(timer_set_auto_reload(group, timer, TIMER_AUTORELOAD_EN));
+    timer_frame_index = 0;
+    ESP_ERROR_CHECK(timer_start(group, timer));
+    #endif
+}

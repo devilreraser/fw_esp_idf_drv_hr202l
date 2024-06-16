@@ -38,6 +38,11 @@ menu "Component drv_hr202l Configuration"
         range DRV_HR202L_GPIO_RANGE_NONE DRV_HR202L_GPIO_OUT_RANGE_MAX
         default DRV_HR202L_GPIO_RANGE_NONE
         
+    config DRV_HR202L_PIN_AIN
+        int "GPIO pin number HR202L AIN"
+        range DRV_HR202L_GPIO_RANGE_NONE DRV_HR202L_GPIO_OUT_RANGE_MAX
+        default DRV_HR202L_GPIO_RANGE_NONE
+        
     config DRV_HR202L_PIN_DBG
         int "GPIO pin number HR202L DBG"
         range DRV_HR202L_GPIO_RANGE_NONE DRV_HR202L_GPIO_OUT_RANGE_MAX
